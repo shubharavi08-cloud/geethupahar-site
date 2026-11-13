@@ -229,7 +229,7 @@ app.post('/api/admin/orders/:id/deliver', admin, (req, res) => {
 });
 
 // ---------------- static + retention
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: PROD ? '1h' : 0 }));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: PROD ? '1d' : 0, setHeaders: (res, p) => { if (/\.(html|css|js)$/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
 function purge() {
   const day = 864e5, rows = db.prepare('SELECT * FROM orders').all();
   for (const o of rows) {
