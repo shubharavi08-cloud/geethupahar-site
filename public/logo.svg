@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a1741"/><stop offset="1" stop-color="#22081f"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdf9a"/><stop offset="1" stop-color="#f0a93a"/></linearGradient>
+    <linearGradient id="rose" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8fa8"/><stop offset="1" stop-color="#e8537a"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="214" fill="none" stroke="#f6c96b" stroke-opacity=".35" stroke-width="4"/>
+  <!-- gift box -->
+  <rect x="134" y="300" width="244" height="132" rx="16" fill="url(#gold)"/>
+  <rect x="116" y="262" width="280" height="56" rx="14" fill="url(#gold)"/>
+  <rect x="116" y="304" width="280" height="14" fill="#c9852a" opacity=".35"/>
+  <rect x="234" y="262" width="44" height="170" fill="url(#rose)"/>
+  <!-- music note rising from the ribbon knot -->
+  <path d="M290 250 V112 C290 112 376 126 372 200" fill="none" stroke="url(#gold)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- bow loops -->
+  <ellipse cx="222" cy="252" rx="46" ry="28" transform="rotate(-20 222 252)" fill="url(#rose)" stroke="#fff" stroke-opacity=".3" stroke-width="3"/>
+  <ellipse cx="290" cy="252" rx="46" ry="28" transform="rotate(20 290 252)" fill="url(#rose)" stroke="#fff" stroke-opacity=".3" stroke-width="3"/>
+  <circle cx="256" cy="262" r="20" fill="#e8537a" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
+  <!-- sparkles -->
+  <path d="M120 150 l8 22 22 8 -22 8 -8 22 -8 -22 -22 -8 22 -8z" fill="#ffdf9a"/>
+  <path d="M410 300 l6 16 16 6 -16 6 -6 16 -6 -16 -16 -6 16 -6z" fill="#ffdf9a" opacity=".9"/>
+</svg>
