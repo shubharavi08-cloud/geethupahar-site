@@ -30,7 +30,7 @@ const hmac = (s, k = SESSION_SECRET) => crypto.createHmac('sha256', k).update(s)
 const safeEq = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
 const clip = (v, n) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n);
 
-const OCCASIONS = ['birthday', 'anniversary', 'wedding', 'love', 'diwali', 'festival', 'devotional', 'friendship', 'thank-you', 'other'];
+const OCCASIONS = ['birthday', 'anniversary', 'wedding', 'love', 'diwali', 'festival', 'devotional', 'friendship', 'thank-you', 'graduation', 'reel', 'other'];
 const LANGS = ['en', 'hi', 'kn', 'ta', 'te'];
 const RECIPIENTS = ['partner', 'mother', 'father', 'child', 'sibling', 'friend', 'grandparent', 'teacher', 'self', 'other'];
 const GENRES = ['soft-melody', 'filmy-romantic', 'classical-folk', 'pop', 'devotional', 'rap-fun', 'acoustic'];
@@ -196,7 +196,7 @@ const T = {
 };
 const SUB = { en: 'A song made just for you', hi: 'सिर्फ़ आपके लिए बना गीत', kn: 'ನಿಮಗಾಗಿ ವಿಶೇಷ ಹಾಡು', ta: 'உங்களுக்காகவே உருவான பாடல்', te: 'మీ కోసమే చేసిన పాట' };
 const LOVE = { en: 'With love,', hi: 'प्यार के साथ,', kn: 'ಪ್ರೀತಿಯಿಂದ,', ta: 'அன்புடன்,', te: 'ప్రేమతో,' };
-const THEME = { birthday: 'gold', anniversary: 'rose', wedding: 'rose', love: 'rose', diwali: 'saffron', festival: 'saffron', devotional: 'saffron' };
+const THEME = { birthday: 'gold', anniversary: 'rose', wedding: 'rose', love: 'rose', diwali: 'saffron', festival: 'saffron', devotional: 'saffron', graduation: 'gold', reel: 'rose' };
 let rendering = null;
 app.post('/api/admin/orders/:id/render', admin, (req, res) => {
   const o = db.prepare('SELECT * FROM orders WHERE id=?').get(+req.params.id); const photos = JSON.parse(o?.photos || '[]');

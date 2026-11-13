@@ -83,3 +83,71 @@ section h2::after{content:"✦  ❖  ✦";display:block;font-size:14px;letter-sp
 footer{border-top:1px solid rgba(246,201,107,.2);margin-top:10px}
 @media (prefers-reduced-motion:reduce){.hero-logo,.btn,.hero h1 em{animation:none}}
 @media (max-width:520px){header.top{padding-top:54px}.hero-logo{width:120px;height:120px}}
+
+/* ===== Homepage v2 (matches mockup) ===== */
+body.home::before{display:none}
+body.home{background:#1d0630}
+.ic{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(32,6,52,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(246,201,107,.22)}
+.nav{display:flex;align-items:center;gap:18px;padding-top:10px;padding-bottom:10px;max-width:1240px}
+.brandlk{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;flex:none}
+.brandlk img{filter:drop-shadow(0 0 8px rgba(246,201,107,.5))}
+.bt{display:flex;flex-direction:column;line-height:1.05}.bt b{font-size:21px;font-weight:800;letter-spacing:-.4px}.bt b i{font-style:normal;background:linear-gradient(100deg,#ff7aa2,#ffb347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bt small{font:700 15px 'Noto Sans Kannada',Poppins,sans-serif;color:#ffc866;margin-top:3px}
+.tl{font-size:10.5px;letter-spacing:3.2px;color:#d9c3d6;border-left:1px solid rgba(255,255,255,.25);padding-left:16px;line-height:1.7;flex:none}
+.links{display:flex;gap:4px;margin-left:auto;align-items:center}
+.links a{color:#fff;text-decoration:none;font-size:14.5px;font-weight:500;padding:8px 13px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+.links a:hover{color:var(--gold2)}.links a.on{border-color:var(--gold);color:var(--gold2)}
+.gbtn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;font-size:15px;flex:none;animation:none}.gbtn .ic{width:20px;height:20px}
+.hero2{position:relative;padding:34px 0 40px;overflow:hidden;background:radial-gradient(700px 420px at 14% 40%,rgba(255,111,145,.28),transparent 65%),radial-gradient(600px 400px at 92% 30%,rgba(255,170,60,.22),transparent 65%)}
+.hgrid{display:grid;grid-template-columns:minmax(220px,1fr) minmax(300px,1.25fr) minmax(240px,1fr);gap:10px;align-items:center;max-width:1240px}
+.hlogo img{width:100%;max-width:340px;margin:0 auto;display:block;-webkit-mask-image:radial-gradient(closest-side,#000 82%,transparent 100%);mask-image:radial-gradient(closest-side,#000 82%,transparent 100%);animation:bob 5s ease-in-out infinite}
+.hmid{text-align:center}
+.ht{white-space:nowrap;font-size:clamp(34px,4.7vw,64px);font-weight:800;letter-spacing:-1.5px;line-height:1.05;color:#fff}
+.ht i{font-style:normal;background:linear-gradient(100deg,#ff7aa2,#ffb347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kn{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0 6px;font:700 clamp(24px,3vw,36px) 'Noto Sans Kannada',Poppins,sans-serif;color:#ffc866}
+.kn span{height:1px;width:clamp(30px,6vw,90px);background:rgba(246,201,107,.6)}
+.ribbon{position:relative;width:min(430px,92%);margin:8px auto 4px;filter:drop-shadow(0 8px 18px rgba(255,150,40,.4))}
+.ribbon .rb{display:block;padding:12px 8% 16px;background:linear-gradient(100deg,#ffd36a,#ffb347 55%,#ffd98a);clip-path:polygon(0 12%,6% 50%,0 88%,100% 88%,94% 50%,100% 12%);text-align:center;font:400 clamp(30px,4vw,48px)/1.1 Pacifico,cursive;color:#3a1236}
+.ribbon .rh{position:absolute;right:-6px;top:-18px;width:44px;fill:none;stroke:#ffb347;stroke-width:3}
+.hs{letter-spacing:4px;font-weight:500;font-size:clamp(12px,1.5vw,16px);color:#f1e2ee;line-height:1.8;margin:2px auto 20px;max-width:none}
+.btn.big{padding:16px 34px;font-size:18px}
+.hero2 .badges{margin-top:20px}
+.hart img{width:100%;display:block;border-radius:26px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%);filter:saturate(1.05)}
+.feat{display:grid;grid-template-columns:repeat(6,1fr);margin:-6px auto 0;position:relative;z-index:3;border:1px solid rgba(246,201,107,.4);border-radius:22px;background:linear-gradient(180deg,rgba(70,24,100,.95),rgba(48,12,72,.95));padding:14px 6px;box-shadow:0 14px 40px rgba(0,0,0,.35);max-width:1240px}
+.feat div{display:flex;align-items:center;gap:10px;padding:6px 14px;border-left:1px solid rgba(255,255,255,.14);font-size:14px;line-height:1.35;color:#fff}
+.feat div:first-child{border-left:0}.feat .ic{color:#ffc866;width:34px;height:34px}
+.light{margin-top:-34px;padding:70px 0 40px;background:linear-gradient(180deg,#fff7fb,#f8e6f5);color:#4a1a6b;border-radius:0}
+.lgrid{display:grid;grid-template-columns:1.05fr 1fr;gap:34px;max-width:1240px;align-items:start}
+.lh,.lh2{font-size:clamp(22px,2.6vw,30px);font-weight:700;color:#5a1d80;text-align:center;margin-bottom:22px;background:none;-webkit-text-fill-color:#5a1d80}
+.lh{display:flex;align-items:center;gap:14px;justify-content:center}.lh span{height:1px;flex:1;background:#ffb347;max-width:90px}
+.lh::after,.lh2::after{display:none}
+.flow{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.fs{text-align:center;flex:1;min-width:0}.fs i{display:grid;place-items:center;width:78px;height:78px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(160deg,#ffe3ef,#fbd0ea);color:#6b2a9a;box-shadow:0 6px 16px rgba(160,60,160,.18)}.fs .ic{width:34px;height:34px}
+.fs b{font-size:14px;font-weight:600;line-height:1.35;color:#3d1458;display:block}
+.flow em{font-style:normal;color:#ff9a3c;font-size:34px;line-height:78px;flex:none}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tiles a{text-decoration:none;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(120,40,140,.16);transition:transform .18s;display:block}
+.tiles a:hover{transform:translateY(-4px)}
+.tiles img{width:100%;aspect-ratio:1.2;object-fit:cover;display:block}
+.tiles b{display:block;text-align:center;font-size:14px;font-weight:600;color:#4a1a6b;padding:9px 6px 11px}
+section.dk,section.dk2{padding:60px 0}.dk{background:linear-gradient(180deg,#1d0630,#2b0a46)}.dk2{background:#2b0a46}
+body.home .wrap{max-width:1240px}body.home section.dk .wrap,body.home section.dk2 .wrap,body.home #pricing .wrap,body.home #samples .wrap{max-width:1100px}
+.big2{max-width:1000px;margin:0 auto}
+.feature{display:flex;flex-direction:column;gap:10px;text-align:left}
+.feature .fi{font-size:42px}.feature h3{font-size:22px}.feature p{color:#e4d2df}
+.feature ul{list-style:none;padding:0;margin:4px 0 12px;flex:1}.feature li{padding:5px 0 5px 24px;position:relative;font-size:15px;color:#f0e2ec}.feature li:before{content:"✦";position:absolute;left:0;color:var(--gold)}
+.feature .btn{align-self:flex-start}
+.chips.big .chip{font-size:17px;padding:12px 22px}
+#pricing,#samples{padding:50px 0}
+.ctab{display:flex;align-items:center;justify-content:center;gap:20px;border-radius:30px;margin:36px 0 10px;padding:26px 20px;background:linear-gradient(100deg,#5b1778,#8a1f86 50%,#5b1778);border:1px solid rgba(246,201,107,.4);overflow:hidden;max-width:1240px}
+.ctab .staff{width:min(300px,26%);flex:none}.ctab .hrt{width:min(120px,12%);flex:none;filter:drop-shadow(0 0 10px #ff7aa2)}
+.ctab .btn{display:inline-flex;align-items:center;gap:10px}
+@media (max-width:1060px){.tl{display:none}.nav{flex-wrap:wrap;gap:6px 14px}.links{order:3;width:100%;margin-left:0;overflow-x:auto;padding-bottom:2px}.gbtn{margin-left:auto}
+.hgrid{grid-template-columns:1fr 1.2fr}.hart{grid-column:1/-1;max-width:560px;margin:0 auto}.hart img{-webkit-mask-image:none;mask-image:none}
+.feat{grid-template-columns:repeat(3,1fr);row-gap:6px}.feat div:nth-child(4){border-left:0}
+.lgrid{grid-template-columns:1fr}}
+@media (max-width:640px){.hgrid{grid-template-columns:1fr}.hlogo img{max-width:230px}.feat{grid-template-columns:repeat(2,1fr)}.feat div:nth-child(odd){border-left:0}.feat div:nth-child(4){border-left:1px solid rgba(255,255,255,.14)}
+.flow{flex-wrap:wrap;justify-content:center}.flow em{display:none}.fs{flex:0 0 44%;margin-bottom:12px}.tiles{grid-template-columns:repeat(2,1fr)}
+.ctab{flex-direction:column}.ctab .staff,.ctab .hrt{display:none}.ctab .btn{font-size:16px;padding:14px 20px}.hs{letter-spacing:2.5px}}
+@media (max-width:640px){.nav{flex-wrap:wrap;gap:6px 8px}.brandlk{flex:1;min-width:0}.gbtn{padding:9px 14px;font-size:13px}.gbtn .ic{display:none}.bt b{font-size:19px}.links a{padding:7px 11px;font-size:13.5px}}

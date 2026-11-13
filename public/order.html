@@ -7,16 +7,16 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 <script>
 const $=s=>document.querySelector(s);let C={prices:{audio:499,video:999}};
-const D={plan:new URLSearchParams(location.search).get('plan')==='audio'?'audio':'video',recipient:'',occasion:'',language:'',genre:'',to_name:'',from_name:'',pronounce:'',story:'',cust_name:'',phone:'',email:'',consent:false};let photos=[];
+const PRE=new URLSearchParams(location.search).get('occasion');const D={plan:new URLSearchParams(location.search).get('plan')==='audio'?'audio':'video',recipient:'',occasion:/^(birthday|anniversary|wedding|love|diwali|festival|devotional|friendship|thank-you|graduation|reel|other)$/.test(PRE||'')?PRE:'',language:'',genre:'',to_name:'',from_name:'',pronounce:'',story:'',cust_name:'',phone:'',email:'',consent:false};let photos=[];
 const R=[['partner','💞','Partner'],['mother','🌸','Mother'],['father','🧔','Father'],['child','🧒','Child'],['sibling','👫','Brother / Sister'],['friend','🤝','Friend'],['grandparent','👵','Grandparent'],['teacher','📚','Teacher'],['self','✨','Myself'],['other','🎁','Someone else']];
-const O=[['birthday','🎂','Birthday'],['anniversary','💞','Anniversary'],['wedding','💍','Wedding'],['love','❤️','Love / Proposal'],['diwali','🪔','Diwali'],['festival','🎉','Other festival'],['devotional','🙏','Devotional'],['friendship','🤝','Friendship'],['thank-you','💐','Thank you'],['other','🎁','Just because']];
+const O=[['birthday','🎂','Birthday'],['anniversary','💞','Anniversary'],['wedding','💍','Wedding'],['love','❤️','Love / Proposal'],['diwali','🪔','Diwali'],['festival','🎉','Other festival'],['devotional','🙏','Devotional'],['friendship','🤝','Friendship'],['thank-you','💐','Thank you'],['graduation','🎓','Graduation'],['reel','🎬','Reel / social media'],['other','🎁','Just because']];
 const L=[['hi','हिन्दी','Hindi'],['kn','ಕನ್ನಡ','Kannada'],['ta','தமிழ்','Tamil'],['te','తెలుగు','Telugu'],['en','English','']];
 const G=[['soft-melody','Soft melody','Gentle and heartfelt'],['filmy-romantic','Filmy romantic','Like a movie song'],['classical-folk','Classical / folk','Traditional feel'],['pop','Upbeat pop','Fun and bright'],['acoustic','Acoustic','Guitar and simple'],['devotional','Devotional','Bhajan style'],['rap-fun','Fun rap','Playful and cheeky']];
 const opts=(arr,key,withSub)=>`<div class="opts">${arr.map(a=>`<button type="button" class="opt ${D[key]===a[0]?'sel':''}" data-k="${key}" data-v="${a[0]}">${withSub?`${a[1]}<small>${a[2]}</small>`:`<div style="font-size:26px">${a[1]}</div>${a[2]}`}</button>`).join('')}</div>`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const S=[
 {t:'Who is this song for?',h:'Pick the closest relationship.',r:()=>opts(R,'recipient'),ok:()=>!!D.recipient},
-{t:'What is the occasion?',h:'',r:()=>opts(O,'occasion'),ok:()=>!!D.occasion},
+{t:'What is the occasion?',h:'',skip:()=>!!PRE&&!!D.occasion&&!window.__chg,r:()=>opts(O,'occasion'),ok:()=>!!D.occasion},
 {t:'Which language should we sing in?',h:'Names and key words will be sung naturally.',r:()=>opts(L.map(l=>[l[0],l[1],l[2]]),'language',true),ok:()=>!!D.language},
 {t:'What style do you like?',h:'Pick the feel of the music.',r:()=>opts(G,'genre',true),ok:()=>!!D.genre},
 {t:'Tell us their story',h:'The more you share, the more personal the song. Please do not mention singers\' names.',r:()=>`
