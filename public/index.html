@@ -1,13 +1,15 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" href="/logo-header.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:image" content="https://geethupahar.com/og-logo.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:title" content="Geeth Upahar — a song made just for them"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>A song made just for them — personalised songs in Hindi, Kannada, Tamil, Telugu & English</title>
-<meta name="description" content="Tell us your story. We turn it into a personalised song with their name in it — audio from ₹499, video song with your photos from ₹999. Hindi, Kannada, Tamil, Telugu, English.">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" href="/logo-header.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:image" content="https://geethupahar.com/og-logo.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:title" content="Geeth Upahar — Don't Just Gift Something. Gift a Song."><meta property="og:description" content="Personalised songs with their name in them. Audio from ₹499, video song with your photos from ₹999."><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Don't Just Gift Something. Gift a Song. — Geeth Upahar</title>
+<meta name="description" content="Don't just gift something — gift a song. Tell us your story. We turn it into a personalised song with their name in it — audio from ₹499, video song with your photos from ₹999. Hindi, Kannada, Tamil, Telugu, English.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css"></head><body>
 <div class="wrap">
-<header class="top"><a class="logo" href="/" id="brand">Apna Geet</a><a class="btn ghost" href="/order.html" style="padding:9px 20px;font-size:14px">Order a song</a></header>
+<header class="top"><a class="logo" href="/" id="brand">Geeth Upahar</a><a class="btn ghost" href="/order.html" style="padding:9px 20px;font-size:14px">Order a song</a></header>
 <div class="hero">
-<h1>A song with <em>their name</em> in it,<br>made from <em>your story</em></h1>
-<p>Birthday, anniversary, wedding, a thank-you to Amma — tell us what they mean to you, and we turn it into a song they will play again and again.</p>
+<img class="hero-logo" src="/logo-hero.png" alt="Geeth Upahar" width="150" height="150">
+<div class="eyebrow">🎉 Personalised songs for every celebration</div>
+<h1>Don't Just Gift Something.<br><em>Gift a Song.</em></h1>
+<p>Birthday, anniversary, wedding, a thank-you to Amma — tell us what they mean to you, and we turn it into a song with their name in it, one they will play again and again.</p>
 <a class="btn" href="/order.html">Create my song →</a>
 <div class="badges"><span>🎵 Hindi · ಕನ್ನಡ · தமிழ் · తెలుగు · English</span><span>📸 Video song with your photos</span><span>⏱ Delivered <b class="dl">within 48 hours</b></span></div>
 </div>
@@ -30,11 +32,12 @@
 <details><summary>Are my photos safe?</summary><p>Photos are used only to make your video, kept private, and deleted from our system 30 days after delivery. See our <a href="/privacy.html">privacy policy</a>.</p></details>
 <details><summary>Which languages?</summary><p>Hindi, Kannada, Tamil, Telugu and English. Choose when you order.</p></details>
 <details><summary>How do I pay?</summary><p>UPI, cards, netbanking and wallets — securely through Razorpay.</p></details></div></section>
-<section style="text-align:center"><h2>Make someone's day</h2><p class="sub">Start now — it takes about 5 minutes.</p><a class="btn" href="/order.html">Create my song →</a></section>
+<section><div class="cta-band"><h2>Make someone's day</h2><p class="sub">Don't just gift something. Gift a song — it takes about 5 minutes.</p><a class="btn" href="/order.html">Create my song →</a></div></section>
 </div>
 <footer><div class="wrap"><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/refund.html">Refunds</a><a id="wa" href="#">WhatsApp us</a><p style="margin-top:10px">© <span id="yr"></span> <span class="bn"></span></p></div></footer>
+<script src="/festive.js" defer></script>
 <script>
-fetch('/api/config').then(r=>r.json()).then(c=>{document.title=c.brand+' — personalised songs';document.getElementById('brand').textContent=c.brand;pa.textContent=c.prices.audio;pv.textContent=c.prices.video;
+fetch('/api/config').then(r=>r.json()).then(c=>{document.getElementById('brand').textContent=c.brand;pa.textContent=c.prices.audio;pv.textContent=c.prices.video;
 document.querySelectorAll('.dl').forEach(e=>e.textContent=c.delivery);document.querySelectorAll('.bn').forEach(e=>e.textContent=c.brand);
 if(/^\d{12}$/.test(c.whatsapp))wa.href='https://wa.me/'+c.whatsapp;else wa.style.display='none'});
 yr.textContent=new Date().getFullYear();
