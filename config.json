@@ -1,0 +1,12 @@
+{
+  "brand": "Geeth Upahar",
+  "domain": "geethupahar.com",
+  "whatsapp": "918088443156",
+  "prices": {
+    "audio": 499,
+    "video": 999
+  },
+  "deliveryText": "within 48 hours",
+  "photoRetentionDays": 30,
+  "fileRetentionDays": 180
+}

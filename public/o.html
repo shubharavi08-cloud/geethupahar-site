@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Your song</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+<div class="wrap" style="max-width:560px"><header class="top"><a class="logo" href="/" id="brand"></a></header><div id="m" class="card" style="text-align:center;margin-top:10px">Loading…</div></div>
+<script>
+const t=new URLSearchParams(location.search).get('t');const $=s=>document.querySelector(s);const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load(){const r=await fetch('/api/o/'+encodeURIComponent(t));if(!r.ok){$('#m').innerHTML='We could not find this order. Please check your link.';return}const o=await r.json();$('#brand').textContent=o.brand;document.title='Song for '+o.to;
+ if(o.delivered){const v=o.hasVideo,a=o.hasAudio;$('#m').innerHTML=`<h2>🎶 A song for ${esc(o.to)}</h2><p style="color:var(--mut);margin:6px 0 14px">Made with love. Tap play, then download and share.</p>
+ ${v?`<video src="/api/o/${t}/file/video" controls playsinline style="width:100%;border-radius:16px;max-height:70vh;background:#000"></video><p style="margin:14px 0"><a class="btn" href="/api/o/${t}/file/video?dl=1">⬇ Download video</a></p>`:''}
+ ${a?`<audio src="/api/o/${t}/file/audio" controls style="width:100%;margin:10px 0"></audio><p><a class="btn ${v?'ghost':''}" href="/api/o/${t}/file/audio?dl=1">⬇ Download audio</a></p>`:''}
+ <details style="text-align:left;margin-top:22px"><summary>Something not right? Ask for a free correction</summary><textarea id="rv" maxlength="1000" style="min-height:90px;margin-top:10px" placeholder="e.g. The name should sound like “Uh-nyaa”"></textarea><p><button class="btn" style="margin-top:10px;padding:10px 20px;font-size:14px" id="rb">Send</button></p></details>`;
+  const rb=$('#rb');if(rb)rb.onclick=async()=>{await fetch(`/api/o/${t}/revision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note:$('#rv').value})});rb.parentElement.innerHTML='Thank you — we will fix it and message you.'};return}
+ const paid=o.status!=='created';$('#m').innerHTML=paid?`<h2>🎉 Order received!</h2><p style="margin:10px 0;color:var(--mut)">Thank you! We are creating your personalised song for <b style="color:#fff">${esc(o.to)}</b>.<br>It will be ready <b>${esc(o.delivery)}</b> — we will message you on WhatsApp.</p><p style="color:var(--mut);font-size:14px">Order #${o.id} · keep this page; your song will appear here.</p>`:`<h2>Waiting for payment…</h2><p style="color:var(--mut)">If you have paid, this page updates automatically in a few seconds.</p>`;
+ setTimeout(load,paid?30000:4000)}
+load();
+</script></body></html>

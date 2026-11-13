@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A song made just for them — personalised songs in Hindi, Kannada, Tamil, Telugu & English</title>
+<meta name="description" content="Tell us your story. We turn it into a personalised song with their name in it — audio from ₹499, video song with your photos from ₹999. Hindi, Kannada, Tamil, Telugu, English.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"></head><body>
+<div class="wrap">
+<header class="top"><a class="logo" href="/" id="brand">Apna Geet</a><a class="btn ghost" href="/order.html" style="padding:9px 20px;font-size:14px">Order a song</a></header>
+<div class="hero">
+<h1>A song with <em>their name</em> in it,<br>made from <em>your story</em></h1>
+<p>Birthday, anniversary, wedding, a thank-you to Amma — tell us what they mean to you, and we turn it into a song they will play again and again.</p>
+<a class="btn" href="/order.html">Create my song →</a>
+<div class="badges"><span>🎵 Hindi · ಕನ್ನಡ · தமிழ் · తెలుగు · English</span><span>📸 Video song with your photos</span><span>⏱ Delivered <b class="dl">within 48 hours</b></span></div>
+</div>
+<section id="samples" style="display:none"><h2>Listen to a few</h2><p class="sub">Sample video songs</p><div class="samples" id="sv"></div></section>
+<section><h2>How it works</h2><p class="sub">Four simple steps — about 5 minutes of your time</p>
+<div class="grid g3" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+<div class="card step"><div class="n">1</div><b>Tell us about them</b><p>Their name, your memories, what to say. Pick language and style.</p></div>
+<div class="card step"><div class="n">2</div><b>Add photos</b><p>For the video song, upload 3–12 favourite photos.</p></div>
+<div class="card step"><div class="n">3</div><b>We compose your song</b><p>Lyrics written from your story, then sung and finished by our team.</p></div>
+<div class="card step"><div class="n">4</div><b>Get it on WhatsApp</b><p>A private link to watch and download. Share it with them!</p></div></div></section>
+<section id="pricing"><h2>Simple pricing</h2><p class="sub">One song. Made only for them. No subscriptions.</p>
+<div class="grid g2" style="max-width:760px;margin:auto">
+<div class="card price"><b>Audio Song</b><div class="amt">₹<span id="pa">499</span></div><ul><li>Personalised lyrics from your story</li><li>Their name sung in the song</li><li>Full-length song (MP3)</li><li>1 free correction</li></ul><a class="btn ghost" href="/order.html?plan=audio">Choose audio</a></div>
+<div class="card price pop"><span class="tag">Most loved</span><b>Video Song</b><div class="amt">₹<span id="pv">999</span></div><ul><li>Everything in Audio</li><li>Designed video with your photos</li><li>Animated lyrics &amp; greetings</li><li>Ready for WhatsApp, Reels &amp; Status</li></ul><a class="btn" href="/order.html?plan=video">Choose video</a></div></div></section>
+<section><h2>For every occasion</h2><p class="sub">&nbsp;</p><div class="chips"><span class="chip">🎂 Birthday</span><span class="chip">💞 Anniversary</span><span class="chip">💍 Wedding</span><span class="chip">🪔 Diwali &amp; festivals</span><span class="chip">🙏 Devotional</span><span class="chip">🤝 Friendship</span><span class="chip">💐 Thank you</span><span class="chip">❤️ Just because</span></div></section>
+<section><h2>Questions</h2><p class="sub">&nbsp;</p><div style="max-width:720px;margin:auto">
+<details><summary>Who creates the song?</summary><p>Your song is created with the help of AI music tools and finished by our team. We do not imitate any real singer's voice.</p></details>
+<details><summary>How long does it take?</summary><p>Delivered <span class="dl">within 48 hours</span> of payment. You get a WhatsApp message with your private link.</p></details>
+<details><summary>What if a name is pronounced wrong?</summary><p>Tell us how to say it when you order. If anything is off, we fix it once for free — see our <a href="/refund.html">refund &amp; correction policy</a>.</p></details>
+<details><summary>Are my photos safe?</summary><p>Photos are used only to make your video, kept private, and deleted from our system 30 days after delivery. See our <a href="/privacy.html">privacy policy</a>.</p></details>
+<details><summary>Which languages?</summary><p>Hindi, Kannada, Tamil, Telugu and English. Choose when you order.</p></details>
+<details><summary>How do I pay?</summary><p>UPI, cards, netbanking and wallets — securely through Razorpay.</p></details></div></section>
+<section style="text-align:center"><h2>Make someone's day</h2><p class="sub">Start now — it takes about 5 minutes.</p><a class="btn" href="/order.html">Create my song →</a></section>
+</div>
+<footer><div class="wrap"><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/refund.html">Refunds</a><a id="wa" href="#">WhatsApp us</a><p style="margin-top:10px">© <span id="yr"></span> <span class="bn"></span></p></div></footer>
+<script>
+fetch('/api/config').then(r=>r.json()).then(c=>{document.title=c.brand+' — personalised songs';document.getElementById('brand').textContent=c.brand;pa.textContent=c.prices.audio;pv.textContent=c.prices.video;
+document.querySelectorAll('.dl').forEach(e=>e.textContent=c.delivery);document.querySelectorAll('.bn').forEach(e=>e.textContent=c.brand);
+if(/^\d{12}$/.test(c.whatsapp))wa.href='https://wa.me/'+c.whatsapp;else wa.style.display='none'});
+yr.textContent=new Date().getFullYear();
+fetch('/api/samples').then(r=>r.json()).then(l=>{if(!l.length)return;samples.style.display='';sv.innerHTML=l.map(s=>`<video src="${s.src}" controls playsinline preload="metadata"></video>`).join('')});
+</script></body></html>
