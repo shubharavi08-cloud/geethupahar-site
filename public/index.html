@@ -108,5 +108,5 @@ fetch('/api/config').then(r=>r.json()).then(c=>{pa.textContent=c.prices.audio;pv
 document.querySelectorAll('.dl').forEach(e=>e.textContent=c.delivery);document.querySelectorAll('.bn').forEach(e=>e.textContent=c.brand);
 if(/^\d{12}$/.test(c.whatsapp))wa.href='https://wa.me/'+c.whatsapp;else wa.style.display='none'}).catch(()=>{});
 yr.textContent=new Date().getFullYear();
-fetch('/api/samples').then(r=>r.json()).then(l=>{if(!l.length)return;samples.style.display='';navS.style.display='';sv.innerHTML=l.map(s=>`<video src="${s.src}" controls playsinline preload="metadata"></video>`).join('')}).catch(()=>{});
+fetch('/api/samples').then(r=>r.json()).then(l=>{if(!l.length)return;samples.style.display='';navS.style.display='';sv.innerHTML=l.map(s=>`<video src="${s.src}" ${s.poster?`poster="${s.poster}"`:""} controls playsinline preload="metadata"></video>`).join('')}).catch(()=>{});
 </script></body></html>

@@ -81,7 +81,7 @@ app.get('/api/config', (req, res) => res.json({
 }));
 app.get('/api/samples', (req, res) => {
   const d = path.join(__dirname, 'public', 'samples');
-  try { res.json(fs.readdirSync(d).filter(f => /\.mp4$/i.test(f)).sort().map(f => ({ src: '/samples/' + f, label: f.replace(/\.mp4$/i, '').replace(/[-_]+/g, ' ') }))); } catch { res.json([]); }
+  try { res.json(fs.readdirSync(d).filter(f => /\.mp4$/i.test(f)).sort().map(f => ({ src: '/samples/' + f, poster: fs.existsSync(path.join(d, f.replace(/\.mp4$/i, '.jpg'))) ? '/samples/' + f.replace(/\.mp4$/i, '.jpg') : '', label: f.replace(/\.mp4$/i, '').replace(/[-_]+/g, ' ') }))); } catch { res.json([]); }
 });
 
 app.post('/api/orders', (req, res, next) => {
