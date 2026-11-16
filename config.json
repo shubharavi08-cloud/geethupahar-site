@@ -8,5 +8,15 @@
   },
   "deliveryText": "within 48 hours",
   "photoRetentionDays": 30,
-  "fileRetentionDays": 180
+  "fileRetentionDays": 180,
+  "offer": {
+    "active": true,
+    "label": "Founding Customers",
+    "spots": 25,
+    "prices": {
+      "audio": 299,
+      "video": 599
+    },
+    "extra": "2 free corrections instead of 1"
+  }
 }

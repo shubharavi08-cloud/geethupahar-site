@@ -76,8 +76,13 @@ function sniff(file) {
 }
 const rm = fs => fs.forEach(f => { try { require('fs').unlinkSync(f.path); } catch { } });
 
+const OFFER = CFG.offer && CFG.offer.active ? CFG.offer : null;
+const paidCount = () => { try { return db.prepare("SELECT COUNT(*) n FROM orders WHERE status='paid'").get().n; } catch { return 0; } };
+const spotsLeft = () => OFFER ? Math.max(0, OFFER.spots - paidCount()) : 0;
+const priceOf = plan => (OFFER && spotsLeft() > 0 ? OFFER.prices[plan] : CFG.prices[plan]);
 app.get('/api/config', (req, res) => res.json({
-  brand: CFG.brand, prices: CFG.prices, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, rzpKey: RZP_ID || null, mock: MOCK && !PROD, payReady: !MOCK
+  offer: OFFER && spotsLeft() > 0 ? { label: OFFER.label, left: MOCK && !PROD ? null : spotsLeft(), extra: OFFER.extra, list: CFG.prices } : null,
+  brand: CFG.brand, prices: { audio: priceOf('audio'), video: priceOf('video') }, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, rzpKey: RZP_ID || null, mock: MOCK && !PROD, payReady: !MOCK
 }));
 app.get('/api/samples', (req, res) => {
   const d = path.join(__dirname, 'public', 'samples');
@@ -105,7 +110,7 @@ app.post('/api/orders', (req, res, next) => {
       if (files.length < 3) return err('Add at least 3 photos for the video song.');
       for (const f of files) if (!sniff(f.path)) return err('Photos must be JPG, PNG or WEBP.');
     } else rm(files.splice(0));
-    const amount = CFG.prices[plan] * 100, token = crypto.randomBytes(18).toString('hex');
+    const amount = priceOf(plan) * 100, token = crypto.randomBytes(18).toString('hex');
     const r = db.prepare(`INSERT INTO orders(token,status,plan,occasion,recipient,language,genre,to_name,from_name,pronounce,story,cust_name,phone,email,amount,created_at)
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(token, 'created', plan, b.occasion, b.recipient, b.language, b.genre, to, from, clip(b.pronounce, 200), story, cust, phone.replace(/^\+?91/, ''), email, amount, now());
     const id = Number(r.lastInsertRowid); const pd = path.join(odir(id), 'photos'); fs.mkdirSync(pd, { recursive: true });

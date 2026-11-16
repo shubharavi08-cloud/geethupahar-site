@@ -81,10 +81,12 @@
 
 <section id="samples" style="display:none"><div class="wrap"><h2>Listen to a few</h2><p class="sub">Sample video songs</p><div class="samples" id="sv"></div></div></section>
 
-<section id="pricing"><div class="wrap"><h2>Simple pricing</h2><p class="sub">One song. Made only for them. No subscriptions. Same prices for gifts, Reels and devotional songs.</p>
+<section id="pricing"><div class="wrap"><div id="offer" style="display:none;max-width:760px;margin:0 auto 22px;text-align:center;padding:16px 18px;border:1px dashed var(--gold);border-radius:18px;background:rgba(246,201,107,.08)"><b style="font-size:19px">🎁 <span id="ol">Founding Customers</span> offer</b><div id="ot" style="margin-top:6px"></div></div><h2>Simple pricing</h2><p class="sub">One song. Made only for them. No subscriptions. Same prices for gifts, Reels and devotional songs.</p>
 <div class="grid g2" style="max-width:760px;margin:auto">
-<div class="card price"><b>Audio Song</b><div class="amt">₹<span id="pa">499</span></div><ul><li>Personalised lyrics from your story</li><li>Their name sung in the song</li><li>Full-length song (MP3)</li><li>1 free correction</li></ul><a class="btn ghost" href="/order.html?plan=audio">Choose audio</a></div>
-<div class="card price pop"><span class="tag">Most loved</span><b>Video Song</b><div class="amt">₹<span id="pv">999</span></div><ul><li>Everything in Audio</li><li>Designed video with your photos</li><li>Animated lyrics &amp; greetings</li><li>Ready for WhatsApp, Reels &amp; Status</li></ul><a class="btn" href="/order.html?plan=video">Choose video</a></div></div></div></section>
+<div class="card price"><b>Audio Song</b><div class="amt"><s id="pas" style="display:none;font-size:20px;opacity:.55;-webkit-text-fill-color:currentColor"></s> ₹<span id="pa">499</span></div><ul><li>Personalised lyrics from your story</li><li>Their name sung in the song</li><li>Full-length song (MP3)</li><li id="fc">1 free correction</li></ul><a class="btn ghost" href="/order.html?plan=audio">Choose audio</a></div>
+<div class="card price pop"><span class="tag">Most loved</span><b>Video Song</b><div class="amt"><s id="pvs" style="display:none;font-size:20px;opacity:.55;-webkit-text-fill-color:currentColor"></s> ₹<span id="pv">999</span></div><ul><li>Everything in Audio</li><li>Designed video with your photos</li><li>Animated lyrics &amp; greetings</li><li>Ready for WhatsApp, Reels &amp; Status</li></ul><a class="btn" href="/order.html?plan=video">Choose video</a></div></div></div></section>
+
+<section id="reviews" style="display:none"><div class="wrap"><h2>Loved by families</h2><p class="sub">Real words from people who gifted a song</p><div class="grid g2" id="rv" style="max-width:900px;margin:auto"></div></div></section>
 
 <section><div class="wrap"><h2>Questions</h2><p class="sub">&nbsp;</p><div style="max-width:720px;margin:auto">
 <details><summary>Who creates the song?</summary><p>Your song is created with the help of AI music tools and finished by our team. We do not imitate any real singer's voice.</p></details>
@@ -105,8 +107,10 @@
 <script src="/festive.js?v=3" defer></script>
 <script>
 fetch('/api/config').then(r=>r.json()).then(c=>{pa.textContent=c.prices.audio;pv.textContent=c.prices.video;
+if(c.offer){offer.style.display='';ol.textContent=c.offer.label;pas.textContent='₹'+c.offer.list.audio;pvs.textContent='₹'+c.offer.list.video;pas.style.display=pvs.style.display='';fc.textContent='2 free corrections';ot.innerHTML='Special prices for our first customers'+(c.offer.left!=null?' — <b>'+c.offer.left+' spots left</b>':'')+'. Includes '+c.offer.extra+'. In return we ask for an honest review (and, only if you are happy to, permission to share your reaction).'}
 document.querySelectorAll('.dl').forEach(e=>e.textContent=c.delivery);document.querySelectorAll('.bn').forEach(e=>e.textContent=c.brand);
 if(/^\d{12}$/.test(c.whatsapp))wa.href='https://wa.me/'+c.whatsapp;else wa.style.display='none'}).catch(()=>{});
 yr.textContent=new Date().getFullYear();
+fetch('/reviews.json').then(r=>r.ok?r.json():[]).then(l=>{if(!l.length)return;reviews.style.display='';rv.innerHTML=l.map(x=>`<div class="card"><p style="margin:0 0 10px">“${x.text.replace(/</g,'&lt;')}”</p><b>${x.name.replace(/</g,'&lt;')}</b><div style="color:var(--mut);font-size:14px">${(x.occasion||'').replace(/</g,'&lt;')}</div></div>`).join('')}).catch(()=>{});
 fetch('/api/samples').then(r=>r.json()).then(l=>{if(!l.length)return;samples.style.display='';navS.style.display='';sv.innerHTML=l.map(s=>`<video src="${s.src}" ${s.poster?`poster="${s.poster}"`:""} controls playsinline preload="metadata"></video>`).join('')}).catch(()=>{});
 </script></body></html>
