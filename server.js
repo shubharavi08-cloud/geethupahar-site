@@ -13,8 +13,9 @@ const ADMIN_PW = process.env.ADMIN_PASSWORD || (PROD ? '' : 'admin123');
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const ENGINE_DIR = process.env.SONGREEL_DIR || path.join(__dirname, 'songreel');
 const MOCK = !RZP_ID || !RZP_SECRET;
+const MANUAL_ONLY = PROD && MOCK; // live site without Razorpay keys: orders are saved as 'awaiting_payment' and paid by UPI on WhatsApp
 if (PROD && !ADMIN_PW) { console.error('ADMIN_PASSWORD must be set in production'); process.exit(1); }
-if (PROD && MOCK) console.warn('WARNING: Razorpay keys missing; payments are disabled in production.');
+if (MANUAL_ONLY) console.warn('NOTE: Razorpay keys missing; orders are taken as awaiting_payment (manual UPI) until keys are added.');
 
 fs.mkdirSync(path.join(DATA, 'tmp'), { recursive: true });
 const db = new DatabaseSync(path.join(DATA, 'shop.db'));
@@ -82,7 +83,7 @@ const spotsLeft = () => OFFER ? Math.max(0, OFFER.spots - paidCount()) : 0;
 const priceOf = plan => (OFFER && spotsLeft() > 0 ? OFFER.prices[plan] : CFG.prices[plan]);
 app.get('/api/config', (req, res) => res.json({
   offer: OFFER && spotsLeft() > 0 ? { label: OFFER.label, left: MOCK && !PROD ? null : spotsLeft(), extra: OFFER.extra, list: CFG.prices } : null,
-  brand: CFG.brand, prices: { audio: priceOf('audio'), video: priceOf('video') }, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, rzpKey: RZP_ID || null, mock: MOCK && !PROD, payReady: !MOCK
+  brand: CFG.brand, prices: { audio: priceOf('audio'), video: priceOf('video') }, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, rzpKey: RZP_ID || null, mock: MOCK && !PROD, payReady: !MOCK, manual: MANUAL_ONLY
 }));
 app.get('/api/samples', (req, res) => {
   const d = path.join(__dirname, 'public', 'samples');
@@ -94,7 +95,6 @@ app.post('/api/orders', (req, res, next) => {
   next();
 }, upload.array('photos', 12), async (req, res) => {
   const files = req.files || [];
-  if (PROD && MOCK) { rm(files); return res.status(503).json({ error: 'Bookings open very soon. Please check back shortly.' }); }
   try {
     const b = req.body, plan = b.plan === 'video' ? 'video' : b.plan === 'audio' ? 'audio' : null;
     const err = m => { rm(files); return res.status(400).json({ error: m }); };
@@ -112,16 +112,22 @@ app.post('/api/orders', (req, res, next) => {
     } else rm(files.splice(0));
     const amount = priceOf(plan) * 100, token = crypto.randomBytes(18).toString('hex');
     const r = db.prepare(`INSERT INTO orders(token,status,plan,occasion,recipient,language,genre,to_name,from_name,pronounce,story,cust_name,phone,email,amount,created_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(token, 'created', plan, b.occasion, b.recipient, b.language, b.genre, to, from, clip(b.pronounce, 200), story, cust, phone.replace(/^\+?91/, ''), email, amount, now());
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(token, MANUAL_ONLY ? 'awaiting_payment' : 'created', plan, b.occasion, b.recipient, b.language, b.genre, to, from, clip(b.pronounce, 200), story, cust, phone.replace(/^\+?91/, ''), email, amount, now());
     const id = Number(r.lastInsertRowid); const pd = path.join(odir(id), 'photos'); fs.mkdirSync(pd, { recursive: true });
     const saved = files.map((f, i) => { const n = `${i + 1}.${sniff(f.path)}`; fs.renameSync(f.path, path.join(pd, n)); return n; });
     db.prepare('UPDATE orders SET photos=? WHERE id=?').run(JSON.stringify(saved), id);
+    if (MANUAL_ONLY) return res.json({ token, manual: true, amount, id });
     if (MOCK) return res.json({ token, mock: true, amount });
-    const rz = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + Buffer.from(RZP_ID + ':' + RZP_SECRET).toString('base64') },
-      body: JSON.stringify({ amount, currency: 'INR', receipt: 'ord_' + id, notes: { order: String(id) } })
-    });
-    const j = await rz.json(); if (!rz.ok) { console.error('rzp', j); return res.status(502).json({ error: 'Payment service error. Please try again.' }); }
+    let j = {}, rzOk = false;
+    try {
+      const rz = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + Buffer.from(RZP_ID + ':' + RZP_SECRET).toString('base64') },
+        body: JSON.stringify({ amount, currency: 'INR', receipt: 'ord_' + id, notes: { order: String(id) } })
+      });
+      j = await rz.json(); rzOk = rz.ok; if (!rzOk) console.error('rzp', j);
+    } catch (e) { console.error('rzp', e.message); }
+    // Razorpay not ready (account not activated, bad key, outage): keep the order and take payment by UPI on WhatsApp instead of losing the customer
+    if (!rzOk) { db.prepare("UPDATE orders SET status='awaiting_payment' WHERE id=?").run(id); return res.json({ token, manual: true, amount, id }); }
     db.prepare('UPDATE orders SET rzp_order=? WHERE id=?').run(j.id, id);
     res.json({ token, rzp: { key: RZP_ID, order_id: j.id, amount, name: CFG.brand, prefill: { name: cust, contact: '91' + phone.replace(/^\+?91/, ''), email } } });
   } catch (e) { console.error(e); rm(files); res.status(500).json({ error: 'Something went wrong. Please try again.' }); }
@@ -139,7 +145,7 @@ app.post('/api/orders/:token/mock-pay', (req, res) => {
   db.prepare("UPDATE orders SET status='paid', paid_at=? WHERE id=? AND status='created'").run(now(), o.id); res.json({ ok: true });
 });
 
-const pub = o => ({ plan: o.plan, status: o.status, to: o.to_name, occasion: o.occasion, delivered: o.status === 'delivered', hasAudio: !!o.song_file, hasVideo: !!o.video_file, brand: CFG.brand, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, id: o.id });
+const pub = o => ({ amount: Math.round((o.amount || 0) / 100), plan: o.plan, status: o.status, to: o.to_name, occasion: o.occasion, delivered: o.status === 'delivered', hasAudio: !!o.song_file, hasVideo: !!o.video_file, brand: CFG.brand, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, id: o.id });
 app.get('/api/o/:token', (req, res) => {
   const o = db.prepare('SELECT * FROM orders WHERE token=?').get(req.params.token); if (!o) return res.status(404).json({ error: 'Not found' }); res.json(pub(o));
 });
@@ -191,6 +197,13 @@ app.post('/api/admin/orders/:id/song', admin, sup.fields([{ name: 'song', maxCou
   if (fl.lrc) { lf = 'lyrics.lrc'; fs.renameSync(fl.lrc[0].path, path.join(odir(o.id), lf)); }
   db.prepare('UPDATE orders SET song_file=?, lrc_file=?, status=CASE WHEN status IN (\'paid\') THEN \'song_ready\' ELSE status END WHERE id=?').run(sf, lf, o.id); res.json({ ok: true });
 });
+app.post('/api/admin/orders/:id/markpaid', admin, (req, res) => {
+  const o = db.prepare('SELECT * FROM orders WHERE id=?').get(+req.params.id); if (!o) return res.status(404).end();
+  if (!['awaiting_payment', 'created'].includes(o.status)) return res.status(400).json({ error: 'Order is already ' + o.status });
+  db.prepare("UPDATE orders SET status='paid', paid_at=?, rzp_payment='manual-upi' WHERE id=?").run(now(), o.id);
+  const msg = `Namaste ${o.cust_name}! We received your payment of ₹${Math.round(o.amount / 100)} for the song for ${o.to_name}. Thank you! Your song will be ready ${CFG.deliveryText}. — ${CFG.brand}`;
+  res.json({ ok: true, wa: `https://wa.me/91${o.phone}?text=${encodeURIComponent(msg)}` });
+});
 app.post('/api/admin/orders/:id/notes', admin, (req, res) => { db.prepare('UPDATE orders SET notes=? WHERE id=?').run(clip(req.body?.notes, 4000), +req.params.id); res.json({ ok: true }); });
 
 const T = {
@@ -239,7 +252,7 @@ function purge() {
   const day = 864e5, rows = db.prepare('SELECT * FROM orders').all();
   for (const o of rows) {
     const dir = odir(o.id); if (!fs.existsSync(dir)) continue;
-    const unpaidOld = o.status === 'created' && Date.now() - Date.parse(o.created_at) > 3 * day;
+    const unpaidOld = (o.status === 'created' && Date.now() - Date.parse(o.created_at) > 3 * day) || (o.status === 'awaiting_payment' && Date.now() - Date.parse(o.created_at) > 14 * day);
     const delivered = o.status === 'delivered' && Date.now() - Date.parse(o.delivered_at) > CFG.photoRetentionDays * day;
     const files = o.status === 'delivered' && Date.now() - Date.parse(o.delivered_at) > CFG.fileRetentionDays * day;
     if (unpaidOld || files) { fs.rmSync(dir, { recursive: true, force: true }); db.prepare("UPDATE orders SET photos='[]', song_file=NULL, video_file=NULL, lrc_file=NULL WHERE id=?").run(o.id); if (unpaidOld) db.prepare("UPDATE orders SET status='expired', story='' WHERE id=?").run(o.id); }
@@ -250,4 +263,4 @@ function purge() {
 setInterval(() => { try { purge(); } catch (e) { console.error('purge', e.message); } }, 6 * 3600e3); setTimeout(() => { try { purge(); } catch { } }, 5000);
 db.prepare("UPDATE orders SET render_status='failed' WHERE render_status='rendering'").run();
 app.use((err, req, res, next) => { console.error(err.message); res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 500).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'File too large (max 12 MB per photo).' : 'Server error' }); });
-app.listen(PORT, () => console.log(`${CFG.brand} on :${PORT} ${MOCK ? '(payments: TEST MODE, no Razorpay keys)' : '(Razorpay live)'}`));
+app.listen(PORT, () => console.log(`${CFG.brand} on :${PORT} ${MANUAL_ONLY ? '(payments: manual UPI until Razorpay keys are added)' : MOCK ? '(payments: TEST MODE, no Razorpay keys)' : '(Razorpay live)'}`));
