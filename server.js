@@ -8,12 +8,14 @@ const CFG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf
 const PORT = +process.env.PORT || 3000;
 const DATA = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PROD = process.env.NODE_ENV === 'production';
-const RZP_ID = process.env.RAZORPAY_KEY_ID || '', RZP_SECRET = process.env.RAZORPAY_KEY_SECRET || '', RZP_WH = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+let RZP_ID = process.env.RAZORPAY_KEY_ID || '', RZP_SECRET = process.env.RAZORPAY_KEY_SECRET || '', RZP_WH = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+const KEYFILE = path.join(DATA, 'razorpay.json'); // keys saved from the admin page (kept out of git)
+try { const k = JSON.parse(require('fs').readFileSync(KEYFILE, 'utf8')); RZP_ID = k.id || RZP_ID; RZP_SECRET = k.secret || RZP_SECRET; RZP_WH = k.wh || RZP_WH; } catch { }
 const ADMIN_PW = process.env.ADMIN_PASSWORD || (PROD ? '' : 'admin123');
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const ENGINE_DIR = process.env.SONGREEL_DIR || path.join(__dirname, 'songreel');
-const MOCK = !RZP_ID || !RZP_SECRET;
-const MANUAL_ONLY = PROD && MOCK; // live site without Razorpay keys: orders are saved as 'awaiting_payment' and paid by UPI on WhatsApp
+let MOCK = !RZP_ID || !RZP_SECRET;
+let MANUAL_ONLY = PROD && MOCK; // live site without Razorpay keys: orders are saved as 'awaiting_payment' and paid by UPI on WhatsApp
 if (PROD && !ADMIN_PW) { console.error('ADMIN_PASSWORD must be set in production'); process.exit(1); }
 if (MANUAL_ONLY) console.warn('NOTE: Razorpay keys missing; orders are taken as awaiting_payment (manual UPI) until keys are added.');
 
@@ -194,7 +196,20 @@ app.post('/api/admin/login', (req, res) => {
   res.set('Set-Cookie', `adm=${sign()}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${PROD ? '; Secure' : ''}`); res.json({ ok: true });
 });
 app.post('/api/admin/logout', (req, res) => { res.set('Set-Cookie', 'adm=; HttpOnly; Path=/; Max-Age=0'); res.json({ ok: true }); });
-app.get('/api/admin/me', admin, (req, res) => res.json({ ok: true, mock: MOCK, brand: CFG.brand }));
+app.get('/api/admin/me', admin, (req, res) => res.json({ ok: true, mock: MOCK, brand: CFG.brand, rzpId: RZP_ID, live: !MOCK, wh: !!RZP_WH }));
+app.post('/api/admin/razorpay', admin, async (req, res) => {
+  const id = clip(req.body?.id, 60).trim(), secret = clip(req.body?.secret, 80).trim();
+  if (!/^rzp_(live|test)_\w{8,}$/.test(id) || secret.length < 10) return res.status(400).json({ error: 'Key ID or secret looks wrong.' });
+  try { // check the keys with Razorpay before saving
+    const r = await fetch('https://api.razorpay.com/v1/orders?count=1', { headers: { Authorization: 'Basic ' + Buffer.from(id + ':' + secret).toString('base64') } });
+    if (!r.ok) return res.status(400).json({ error: 'Razorpay did not accept these keys (' + r.status + '). Check the secret and that both are Live keys.' });
+  } catch (e) { return res.status(502).json({ error: 'Could not reach Razorpay. Try again.' }); }
+  let wh = RZP_WH; if (!wh) wh = crypto.randomBytes(16).toString('hex');
+  require('fs').writeFileSync(KEYFILE, JSON.stringify({ id, secret, wh }), { mode: 0o600 });
+  RZP_ID = id; RZP_SECRET = secret; RZP_WH = wh; MOCK = false; MANUAL_ONLY = false;
+  res.json({ ok: true, wh });
+});
+app.get('/api/admin/webhook-secret', admin, (req, res) => res.json({ wh: RZP_WH || null, url: 'https://' + CFG.domain + '/api/razorpay/webhook' }));
 app.get('/api/admin/orders', admin, (req, res) => {
   const rows = db.prepare("SELECT id,token,status,plan,occasion,language,to_name,cust_name,phone,amount,created_at,paid_at,render_status,revision_note FROM orders WHERE status!='created' ORDER BY id DESC LIMIT 300").all(); res.json(rows);
 });
