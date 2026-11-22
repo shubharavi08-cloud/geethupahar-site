@@ -189,11 +189,25 @@ app.post('/api/o/:token/revision', (req, res) => {
 // ---------------- admin
 const sign = () => { const exp = Date.now() + 12 * 3600e3; return exp + '.' + hmac('adm' + exp); };
 const authed = req => { const m = /(?:^|;\s*)adm=([^;]+)/.exec(req.headers.cookie || ''); if (!m) return false; const [exp, sig] = m[1].split('.'); return +exp > Date.now() && safeEq(hmac('adm' + exp), sig || ''); };
+const scryptHash = (pw, salt) => crypto.scryptSync(pw, salt, 32, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+const makeHash = pw => { const salt = crypto.randomBytes(16); return 's1$' + salt.toString('hex') + '$' + scryptHash(pw, salt).toString('hex'); };
+const checkHash = (pw, stored) => { try { const [v, s, h] = String(stored).split('$'); return v === 's1' && safeEq(scryptHash(pw, Buffer.from(s, 'hex')).toString('hex'), h); } catch { return false; } };
+const PWFILE = path.join(DATA, 'admin.json'); // password changed from the admin page (overrides everything else)
+const savedHash = () => { try { return JSON.parse(require('fs').readFileSync(PWFILE, 'utf8')).hash; } catch { return null; } };
+const pwOk = pw => { const sh = savedHash(); if (sh) return checkHash(pw, sh); return (!!ADMIN_PW && safeEq(pw, ADMIN_PW)) || (!!CFG.adminBootstrap && checkHash(pw, CFG.adminBootstrap)); };
 const admin = (req, res, next) => authed(req) ? next() : res.status(401).json({ error: 'login' });
 app.post('/api/admin/login', (req, res) => {
   if (limited('login:' + req.ip, 6, 600e3)) return res.status(429).json({ error: 'Too many attempts. Wait 10 minutes.' });
-  if (!ADMIN_PW || !safeEq(req.body?.password || '', ADMIN_PW)) return res.status(401).json({ error: 'Wrong password' });
+  if (!pwOk(String(req.body?.password || ''))) return res.status(401).json({ error: 'Wrong password' });
   res.set('Set-Cookie', `adm=${sign()}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${PROD ? '; Secure' : ''}`); res.json({ ok: true });
+});
+app.post('/api/admin/password', admin, (req, res) => {
+  if (limited('pw:' + req.ip, 6, 600e3)) return res.status(429).json({ error: 'Too many attempts. Wait 10 minutes.' });
+  const cur = String(req.body?.current || ''), nw = String(req.body?.next || '');
+  if (!pwOk(cur)) return res.status(400).json({ error: 'Current password is wrong.' });
+  if (nw.length < 10) return res.status(400).json({ error: 'New password must be at least 10 characters.' });
+  require('fs').writeFileSync(PWFILE, JSON.stringify({ hash: makeHash(nw) }), { mode: 0o600 });
+  res.json({ ok: true });
 });
 app.post('/api/admin/logout', (req, res) => { res.set('Set-Cookie', 'adm=; HttpOnly; Path=/; Max-Age=0'); res.json({ ok: true }); });
 app.get('/api/admin/me', admin, (req, res) => res.json({ ok: true, mock: MOCK, brand: CFG.brand, rzpId: RZP_ID, live: !MOCK, wh: !!RZP_WH }));
