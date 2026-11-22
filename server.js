@@ -25,6 +25,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS orders(
   rzp_order TEXT, rzp_payment TEXT, created_at TEXT, paid_at TEXT, delivered_at TEXT, photos TEXT DEFAULT '[]',
   song_file TEXT, lrc_file TEXT, video_file TEXT, render_status TEXT DEFAULT '', notes TEXT DEFAULT '', revision_note TEXT DEFAULT '')`);
 
+try { db.exec('ALTER TABLE orders ADD COLUMN grp TEXT'); } catch { }
 const now = () => new Date().toISOString();
 const odir = id => path.join(DATA, 'orders', String(id));
 const hmac = (s, k = SESSION_SECRET) => crypto.createHmac('sha256', k).update(s).digest('hex');
@@ -60,14 +61,14 @@ app.post('/api/razorpay/webhook', express.raw({ type: '*/*', limit: '1mb' }), (r
 app.use(express.json({ limit: '100kb' }));
 
 function markPaid(rzpOrder, payId) {
-  const o = db.prepare('SELECT * FROM orders WHERE rzp_order=?').get(rzpOrder);
-  if (!o || o.status !== 'created') return !!o;
-  db.prepare("UPDATE orders SET status='paid', rzp_payment=?, paid_at=? WHERE id=?").run(payId, now(), o.id);
+  const rows = db.prepare('SELECT id FROM orders WHERE rzp_order=?').all(rzpOrder);
+  if (!rows.length) return false;
+  db.prepare("UPDATE orders SET status='paid', rzp_payment=?, paid_at=? WHERE rzp_order=? AND status IN ('created','awaiting_payment')").run(payId, now(), rzpOrder);
   return true;
 }
 
 // ---------------- public API
-const upload = multer({ dest: path.join(DATA, 'tmp'), limits: { files: 12, fileSize: 12 * 1024 * 1024, fields: 30 } });
+const upload = multer({ dest: path.join(DATA, 'tmp'), limits: { files: 36, fileSize: 12 * 1024 * 1024, fields: 60 } });
 function sniff(file) {
   const b = fs.readFileSync(file, { encoding: null }).subarray(0, 12);
   if (b[0] === 0xff && b[1] === 0xd8) return 'jpg';
@@ -78,7 +79,7 @@ function sniff(file) {
 const rm = fs => fs.forEach(f => { try { require('fs').unlinkSync(f.path); } catch { } });
 
 const OFFER = CFG.offer && CFG.offer.active ? CFG.offer : null;
-const paidCount = () => { try { return db.prepare("SELECT COUNT(*) n FROM orders WHERE status='paid'").get().n; } catch { return 0; } };
+const paidCount = () => { try { return db.prepare("SELECT COUNT(DISTINCT COALESCE(grp, token)) n FROM orders WHERE status NOT IN ('created','awaiting_payment','expired')").get().n; } catch { return 0; } };
 const spotsLeft = () => OFFER ? Math.max(0, OFFER.spots - paidCount()) : 0;
 const priceOf = plan => (OFFER && spotsLeft() > 0 ? OFFER.prices[plan] : CFG.prices[plan]);
 app.get('/api/config', (req, res) => res.json({
@@ -93,43 +94,63 @@ app.get('/api/samples', (req, res) => {
 app.post('/api/orders', (req, res, next) => {
   if (limited('ord:' + req.ip, 12, 3600e3)) return res.status(429).json({ error: 'Too many orders from this network. Please try later.' });
   next();
-}, upload.array('photos', 12), async (req, res) => {
+}, upload.any(), async (req, res) => {
   const files = req.files || [];
   try {
-    const b = req.body, plan = b.plan === 'video' ? 'video' : b.plan === 'audio' ? 'audio' : null;
+    const b = req.body;
     const err = m => { rm(files); return res.status(400).json({ error: m }); };
-    if (!plan) return err('Choose a plan.');
-    if (!OCCASIONS.includes(b.occasion) || !LANGS.includes(b.language) || !RECIPIENTS.includes(b.recipient) || !GENRES.includes(b.genre)) return err('Please complete all choices.');
-    const to = clip(b.to_name, 60), from = clip(b.from_name, 60), story = clip(b.story, 3000), cust = clip(b.cust_name, 80);
-    const phone = clip(b.phone, 20).replace(/[^\d+]/g, ''), email = clip(b.email, 120);
-    if (!to || !story || story.length < 40) return err('Please write a little more about the person and your memories (at least a few sentences).');
+    let list; if (b.songs) { try { list = JSON.parse(b.songs); } catch { return err('Could not read your songs. Please refresh and try again.'); } } else list = [b];
+    if (!Array.isArray(list) || list.length < 1 || list.length > 3) return err('Choose 1 to 3 songs.');
+    const cust = clip(b.cust_name, 80), phone = clip(b.phone, 20).replace(/[^\d+]/g, ''), email = clip(b.email, 120);
     if (!cust || !/^(\+?91)?[6-9]\d{9}$/.test(phone.replace(/^\+/, ''))) return err('Enter a valid 10-digit Indian WhatsApp number.');
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return err('Email looks incorrect.');
     if (b.consent !== 'yes') return err('Please accept the terms and privacy policy.');
-    if (plan === 'video') {
-      if (files.length < 3) return err('Add at least 3 photos for the video song.');
-      for (const f of files) if (!sniff(f.path)) return err('Photos must be JPG, PNG or WEBP.');
-    } else rm(files.splice(0));
-    const amount = priceOf(plan) * 100, token = crypto.randomBytes(18).toString('hex');
-    const r = db.prepare(`INSERT INTO orders(token,status,plan,occasion,recipient,language,genre,to_name,from_name,pronounce,story,cust_name,phone,email,amount,created_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(token, MANUAL_ONLY ? 'awaiting_payment' : 'created', plan, b.occasion, b.recipient, b.language, b.genre, to, from, clip(b.pronounce, 200), story, cust, phone.replace(/^\+?91/, ''), email, amount, now());
-    const id = Number(r.lastInsertRowid); const pd = path.join(odir(id), 'photos'); fs.mkdirSync(pd, { recursive: true });
-    const saved = files.map((f, i) => { const n = `${i + 1}.${sniff(f.path)}`; fs.renameSync(f.path, path.join(pd, n)); return n; });
-    db.prepare('UPDATE orders SET photos=? WHERE id=?').run(JSON.stringify(saved), id);
-    if (MANUAL_ONLY) return res.json({ token, manual: true, amount, id });
-    if (MOCK) return res.json({ token, mock: true, amount });
+    const songs = [];
+    for (let k = 0; k < list.length; k++) {
+      const s = list[k] || {}, plan = s.plan === 'video' ? 'video' : s.plan === 'audio' ? 'audio' : null, tag = list.length > 1 ? 'Song ' + (k + 1) + ': ' : '';
+      if (!plan) return err(tag + 'Choose a plan.');
+      if (!OCCASIONS.includes(s.occasion) || !LANGS.includes(s.language) || !RECIPIENTS.includes(s.recipient) || !GENRES.includes(s.genre)) return err(tag + 'Please complete all choices.');
+      const to = clip(s.to_name, 60), from = clip(s.from_name, 60), story = clip(s.story, 3000);
+      if (!to || !story || story.length < 40) return err(tag + 'Please write a little more about the person and your memories (at least a few sentences).');
+      const ph = files.filter(f => f.fieldname === 'photos_' + k || (!b.songs && f.fieldname === 'photos'));
+      if (plan === 'video') {
+        if (ph.length < 3) return err(tag + 'Add at least 3 photos for the video song.');
+        if (ph.length > 12) return err(tag + 'Use at most 12 photos.');
+        for (const f of ph) if (!sniff(f.path)) return err('Photos must be JPG, PNG or WEBP.');
+      }
+      songs.push({ plan, occasion: s.occasion, recipient: s.recipient, language: s.language, genre: s.genre, to, from, pronounce: clip(s.pronounce, 200), story, ph: plan === 'video' ? ph : [] });
+    }
+    const used = new Set(songs.flatMap(s => s.ph.map(f => f.path))); rm(files.filter(f => !used.has(f.path)));
+    // buy 2 get 1 free: with three songs the cheapest one is free
+    const prices = songs.map(s => priceOf(s.plan)); if (songs.length === 3) prices[prices.indexOf(Math.min(...prices))] = 0;
+    const total = prices.reduce((a, c) => a + c, 0) * 100;
+    const grp = songs.length > 1 ? crypto.randomBytes(9).toString('hex') : null, status = MANUAL_ONLY ? 'awaiting_payment' : 'created';
+    const ins = db.prepare(`INSERT INTO orders(token,status,plan,occasion,recipient,language,genre,to_name,from_name,pronounce,story,cust_name,phone,email,amount,created_at,grp)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    const ids = [], tokens = [];
+    songs.forEach((s, k) => {
+      const token = crypto.randomBytes(18).toString('hex');
+      const r = ins.run(token, status, s.plan, s.occasion, s.recipient, s.language, s.genre, s.to, s.from, s.pronounce, s.story, cust, phone.replace(/^\+?91/, ''), email, prices[k] * 100, now(), grp);
+      const id = Number(r.lastInsertRowid); ids.push(id); tokens.push(token);
+      const pd = path.join(odir(id), 'photos'); fs.mkdirSync(pd, { recursive: true });
+      const saved = s.ph.map((f, n) => { const nm = `${n + 1}.${sniff(f.path)}`; fs.renameSync(f.path, path.join(pd, nm)); return nm; });
+      db.prepare('UPDATE orders SET photos=? WHERE id=?').run(JSON.stringify(saved), id);
+    });
+    const token = tokens[0], id = ids[0];
+    if (MANUAL_ONLY) return res.json({ token, tokens, manual: true, amount: total, id });
+    if (MOCK) return res.json({ token, tokens, mock: true, amount: total });
     let j = {}, rzOk = false;
     try {
       const rz = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + Buffer.from(RZP_ID + ':' + RZP_SECRET).toString('base64') },
-        body: JSON.stringify({ amount, currency: 'INR', receipt: 'ord_' + id, notes: { order: String(id) } })
+        body: JSON.stringify({ amount: total, currency: 'INR', receipt: 'ord_' + id, notes: { order: ids.join(',') } })
       });
       j = await rz.json(); rzOk = rz.ok; if (!rzOk) console.error('rzp', j);
     } catch (e) { console.error('rzp', e.message); }
     // Razorpay not ready (account not activated, bad key, outage): keep the order and take payment by UPI on WhatsApp instead of losing the customer
-    if (!rzOk) { db.prepare("UPDATE orders SET status='awaiting_payment' WHERE id=?").run(id); return res.json({ token, manual: true, amount, id }); }
-    db.prepare('UPDATE orders SET rzp_order=? WHERE id=?').run(j.id, id);
-    res.json({ token, rzp: { key: RZP_ID, order_id: j.id, amount, name: CFG.brand, prefill: { name: cust, contact: '91' + phone.replace(/^\+?91/, ''), email } } });
+    if (!rzOk) { db.prepare(`UPDATE orders SET status='awaiting_payment' WHERE id IN (${ids.join(',')})`).run(); return res.json({ token, tokens, manual: true, amount: total, id }); }
+    db.prepare(`UPDATE orders SET rzp_order=? WHERE id IN (${ids.join(',')})`).run(j.id);
+    res.json({ token, tokens, rzp: { key: RZP_ID, order_id: j.id, amount: total, name: CFG.brand, prefill: { name: cust, contact: '91' + phone.replace(/^\+?91/, ''), email } } });
   } catch (e) { console.error(e); rm(files); res.status(500).json({ error: 'Something went wrong. Please try again.' }); }
 });
 
@@ -142,10 +163,11 @@ app.post('/api/orders/:token/verify', (req, res) => {
 app.post('/api/orders/:token/mock-pay', (req, res) => {
   if (!MOCK || PROD) return res.status(404).end();
   const o = db.prepare('SELECT * FROM orders WHERE token=?').get(req.params.token); if (!o) return res.status(404).end();
-  db.prepare("UPDATE orders SET status='paid', paid_at=? WHERE id=? AND status='created'").run(now(), o.id); res.json({ ok: true });
+  db.prepare("UPDATE orders SET status='paid', paid_at=? WHERE (id=? OR (grp IS NOT NULL AND grp=?)) AND status='created'").run(now(), o.id, o.grp); res.json({ ok: true });
 });
 
-const pub = o => ({ amount: Math.round((o.amount || 0) / 100), plan: o.plan, status: o.status, to: o.to_name, occasion: o.occasion, delivered: o.status === 'delivered', hasAudio: !!o.song_file, hasVideo: !!o.video_file, brand: CFG.brand, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, id: o.id });
+const grpInfo = o => o.grp ? db.prepare('SELECT COUNT(*) n, SUM(amount) a FROM orders WHERE grp=?').get(o.grp) : { n: 1, a: o.amount };
+const pub = o => ({ count: grpInfo(o).n, total: Math.round((grpInfo(o).a || 0) / 100), amount: Math.round((o.amount || 0) / 100), plan: o.plan, status: o.status, to: o.to_name, occasion: o.occasion, delivered: o.status === 'delivered', hasAudio: !!o.song_file, hasVideo: !!o.video_file, brand: CFG.brand, delivery: CFG.deliveryText, whatsapp: CFG.whatsapp, id: o.id });
 app.get('/api/o/:token', (req, res) => {
   const o = db.prepare('SELECT * FROM orders WHERE token=?').get(req.params.token); if (!o) return res.status(404).json({ error: 'Not found' }); res.json(pub(o));
 });
@@ -200,8 +222,9 @@ app.post('/api/admin/orders/:id/song', admin, sup.fields([{ name: 'song', maxCou
 app.post('/api/admin/orders/:id/markpaid', admin, (req, res) => {
   const o = db.prepare('SELECT * FROM orders WHERE id=?').get(+req.params.id); if (!o) return res.status(404).end();
   if (!['awaiting_payment', 'created'].includes(o.status)) return res.status(400).json({ error: 'Order is already ' + o.status });
-  db.prepare("UPDATE orders SET status='paid', paid_at=?, rzp_payment='manual-upi' WHERE id=?").run(now(), o.id);
-  const msg = `Namaste ${o.cust_name}! We received your payment of ₹${Math.round(o.amount / 100)} for the song for ${o.to_name}. Thank you! Your song will be ready ${CFG.deliveryText}. — ${CFG.brand}`;
+  const g = grpInfo(o);
+  db.prepare("UPDATE orders SET status='paid', paid_at=?, rzp_payment='manual-upi' WHERE (id=? OR (grp IS NOT NULL AND grp=?)) AND status IN ('awaiting_payment','created')").run(now(), o.id, o.grp);
+  const msg = `Namaste ${o.cust_name}! We received your payment of ₹${Math.round(g.a / 100)} for ${g.n > 1 ? g.n + ' songs' : 'the song for ' + o.to_name}. Thank you! Your song${g.n > 1 ? 's' : ''} will be ready ${CFG.deliveryText}. — ${CFG.brand}`;
   res.json({ ok: true, wa: `https://wa.me/91${o.phone}?text=${encodeURIComponent(msg)}` });
 });
 app.post('/api/admin/orders/:id/notes', admin, (req, res) => { db.prepare('UPDATE orders SET notes=? WHERE id=?').run(clip(req.body?.notes, 4000), +req.params.id); res.json({ ok: true }); });

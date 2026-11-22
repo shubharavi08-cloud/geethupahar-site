@@ -3,20 +3,20 @@
   "domain": "geethupahar.com",
   "whatsapp": "918088443156",
   "prices": {
-    "audio": 499,
-    "video": 999
+    "audio": 199,
+    "video": 499
   },
   "deliveryText": "within 48 hours",
   "photoRetentionDays": 30,
   "fileRetentionDays": 180,
   "offer": {
     "active": true,
-    "label": "Founding Customers",
-    "spots": 25,
+    "label": "Launch offer",
+    "spots": 100,
     "prices": {
-      "audio": 299,
-      "video": 599
+      "audio": 99,
+      "video": 299
     },
-    "extra": "2 free corrections instead of 1"
+    "extra": "Buy 2 songs, get the 3rd free"
   }
 }
